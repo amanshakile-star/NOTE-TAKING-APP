@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini AI Chat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 100px;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .response-box {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            display: none;
+        }
+
+        .response-box.show {
+            display: block;
+        }
+
+        .response-title {
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .response-text {
+            color: #333;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+            color: #667eea;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #fee;
+            border-left-color: #f44;
+            color: #c33;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Gemini AI Chat</h1>
+        <p class="subtitle">Ask anything and get AI-powered responses</p>
+
+        <div class="input-group">
+            <label for="prompt">Your Question:</label>
+            <textarea 
+                id="prompt" 
+                placeholder="e.g., Explain what API is in simple words..."
+            >Explain what API is in simple words</textarea>
+        </div>
+
+        <button id="sendBtn" onclick="sendPrompt()">
+            Send to Gemini AI
+        </button>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Thinking...</p>
+        </div>
+
+        <div class="response-box" id="responseBox">
+            <div class="response-title">AI Response:</div>
+            <div class="response-text" id="responseText"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { GoogleGenerativeAI } from 'https://esm.run/@google/generative-ai';
+
+        // Load API key from environment (will be injected by server)
+        const API_KEY = '__GEMINI_API_KEY__';
+
+        window.sendPrompt = async function() {
+            const promptInput = document.getElementById('prompt');
+            const sendBtn = document.getElementById('sendBtn');
+            const loading = document.getElementById('loading');
+            const responseBox = document.getElementById('responseBox');
+            const responseText = document.getElementById('responseText');
+
+            const prompt = promptInput.value.trim();
+
+            if (!prompt) {
+                alert('Please enter a question!');
+                return;
+            }
+
+            // Show loading
+            sendBtn.disabled = true;
+            loading.classList.add('show');
+            responseBox.classList.remove('show');
+
+            try {
+                // Initialize Gemini
+                const genAI = new GoogleGenerativeAI(API_KEY);
+                const model = genAI.getGenerativeModel({ model: 'models/gemini-2.5-flash' });
+
+                // Generate content
+                const result = await model.generateContent(prompt);
+                const response = await result.response;
+                const text = response.text();
+
+                // Show response
+                responseText.textContent = text;
+                responseBox.classList.remove('error');
+                responseBox.classList.add('show');
+
+            } catch (error) {
+                console.error('Error:', error);
+                responseText.textContent = 'Error: ' + error.message;
+                responseBox.classList.add('error');
+                responseBox.classList.add('show');
+            } finally {
+                loading.classList.remove('show');
+                sendBtn.disabled = false;
+            }
+        };
+
+        // Allow Enter key to send (Ctrl+Enter for new line)
+        document.getElementById('prompt').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey) {
+                e.preventDefault();
+                sendPrompt();
+            }
+        });
+    </script>
+</body>
+</html>

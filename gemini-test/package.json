@@ -1,0 +1,24 @@
+{
+  "name": "gemini-test",
+  "version": "1.0.0",
+  "description": "Test project for Gemini API",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "list-models": "node listModels.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "gemini",
+    "ai",
+    "api"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "dotenv": "^16.4.5",
+    "express": "^5.2.1"
+  }
+}

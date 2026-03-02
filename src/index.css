@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-950 text-slate-100;
+  }
+}
+
+.ql-container {
+  @apply bg-slate-900 text-slate-100 border-slate-700;
+}
+
+.ql-toolbar {
+  @apply bg-slate-800 border-slate-700;
+}
+
+.ql-editor {
+  @apply min-h-[200px];
+}
+
+.ql-snow .ql-stroke {
+  stroke: #cbd5e1;
+}
+
+.ql-snow .ql-fill {
+  fill: #cbd5e1;
+}
