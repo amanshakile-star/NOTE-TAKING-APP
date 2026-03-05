@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { deleteNote } from '../services/noteService';
-import { Plus, Trash2, Calendar } from 'lucide-react';
+import { Plus, Trash2, Calendar, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../config/firebase';
+import { addRecentlyClosedNote } from '../utils/recentlyClosed';
 
 export default function Notes() {
   const { user, loading: authLoading } = useAuth();
@@ -61,11 +62,14 @@ export default function Notes() {
     };
   }, [user?.uid, authLoading]);
 
-  const handleDelete = async (noteId) => {
+  const handleDelete = async (note) => {
     if (confirm('Delete this note?')) {
       try {
-        await deleteNote(noteId);
-        console.log('Note deleted:', noteId);
+        if (user?.uid) {
+          addRecentlyClosedNote(user.uid, note);
+        }
+        await deleteNote(note.id);
+        console.log('Note deleted:', note.id);
         // No need to manually refresh - onSnapshot will update automatically
       } catch (error) {
         console.error('Error deleting note:', error);
@@ -111,18 +115,27 @@ export default function Notes() {
         {notes.map(note => (
           <div key={note.id} className="bg-slate-900 p-6 rounded-lg border border-slate-800 hover:border-slate-700 transition">
             <div className="flex justify-between items-start mb-4">
-              <h3 className="text-lg font-semibold text-slate-100 line-clamp-1">{note.title || 'Untitled'}</h3>
+              <div className="flex items-center gap-2 min-w-0">
+                {note.type === 'pdf' && (
+                  <FileText className="h-4 w-4 text-primary-400 flex-shrink-0" />
+                )}
+                <h3 className="text-lg font-semibold text-slate-100 line-clamp-1">
+                  {note.title || 'Untitled'}
+                </h3>
+              </div>
               <button
-                onClick={() => handleDelete(note.id)}
+                onClick={() => handleDelete(note)}
                 className="text-slate-400 hover:text-red-500 transition"
               >
                 <Trash2 className="h-4 w-4" />
               </button>
             </div>
             
-            <p className="text-slate-400 text-sm line-clamp-3 mb-4">
-              {stripHtml(note.content || '')}
-            </p>
+            {note.type !== 'pdf' && (
+              <p className="text-slate-400 text-sm line-clamp-3 mb-4">
+                {stripHtml(note.content || '')}
+              </p>
+            )}
             
             {note.tags && note.tags.length > 0 && (
               <div className="flex gap-2 mb-4 flex-wrap">
@@ -142,10 +155,12 @@ export default function Notes() {
             )}
             
             <button
-              onClick={() => navigate(`/notes/${note.id}`)}
+              onClick={() =>
+                navigate(note.type === 'pdf' ? `/pdf/${note.id}` : `/notes/${note.id}`)
+              }
               className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-100 rounded-lg transition"
             >
-              Open
+              {note.type === 'pdf' ? 'Open PDF' : 'Open'}
             </button>
           </div>
         ))}

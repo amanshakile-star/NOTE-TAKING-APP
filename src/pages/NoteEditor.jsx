@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { createNote, updateNote, getNote } from '../services/noteService';
-import { analyzeNoteForQuotes, highlightExamContent, textToSpeech, stopSpeech } from '../services/aiService';
+import { askAIAssistant, analyzeNoteForQuotes, highlightExamContent, textToSpeech, stopSpeech } from '../services/aiService';
 import { Save, Sparkles, Volume2, VolumeX, Calendar, Tag, ArrowLeft } from 'lucide-react';
 import AIAssistant from '../components/AIAssistant';
 
@@ -22,6 +22,10 @@ export default function NoteEditor() {
   const [highlights, setHighlights] = useState([]);
   const [saving, setSaving] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
+  const [askQuestion, setAskQuestion] = useState('');
+  const [askAnswer, setAskAnswer] = useState('');
+  const [asking, setAsking] = useState(false);
+  const [askError, setAskError] = useState('');
 
   useEffect(() => {
     if (id) loadNote();
@@ -121,6 +125,31 @@ export default function NoteEditor() {
     setTags(tags.filter(t => t !== tag));
   };
 
+  const handleAskAi = async () => {
+    const q = askQuestion.trim();
+    if (!q) return;
+
+    const noteText = content.replace(/<[^>]*>/g, '').trim();
+    if (!noteText) {
+      alert('Please add some note content first.');
+      return;
+    }
+
+    setAsking(true);
+    setAskError('');
+    setAskAnswer('');
+
+    try {
+      const answer = await askAIAssistant(q, noteText);
+      setAskAnswer(answer);
+    } catch (err) {
+      console.error('Ask AI error:', err);
+      setAskError(err?.message || 'Failed to get an answer. Please try again.');
+    } finally {
+      setAsking(false);
+    }
+  };
+
   return (
     <div className="max-w-5xl mx-auto space-y-4 sm:space-y-6 pb-20">
       {/* Header with Back Button and Actions */}
@@ -187,16 +216,37 @@ export default function NoteEditor() {
             theme="snow"
             value={content}
             onChange={setContent}
-            className="bg-gray-50 dark:bg-slate-800 rounded-lg"
+            className="bg-gray-50 dark:bg-slate-900 rounded-b-lg"
             modules={{
               toolbar: [
+                [{ header: [1, 2, 3, false] }],
                 ['bold', 'italic', 'underline', 'strike'],
-                ['blockquote', 'code-block'],
                 [{ list: 'ordered' }, { list: 'bullet' }],
-                ['link'],
+                [{ align: [] }],
+                [{ size: ['small', false, 'large', 'huge'] }],
+                [{ font: [] }],
+                [{ color: [] }, { background: [] }],
+                ['link', 'blockquote', 'code-block'],
                 ['clean']
               ]
             }}
+            formats={[
+              'header',
+              'bold',
+              'italic',
+              'underline',
+              'strike',
+              'blockquote',
+              'code-block',
+              'list',
+              'bullet',
+              'align',
+              'size',
+              'font',
+              'color',
+              'background',
+              'link'
+            ]}
           />
         </div>
 
@@ -277,6 +327,53 @@ export default function NoteEditor() {
             </div>
           </div>
         )}
+
+        {/* Ask AI (uses current note context) */}
+        <div className="bg-white dark:bg-slate-950/40 p-4 rounded-lg border border-gray-200 dark:border-slate-800">
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <h3 className="text-gray-900 dark:text-slate-100 font-semibold text-sm sm:text-base">
+              Ask AI about this note
+            </h3>
+            <button
+              onClick={handleAskAi}
+              disabled={asking || !askQuestion.trim()}
+              className="inline-flex items-center gap-2 px-3 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg transition disabled:opacity-50 text-sm font-medium"
+            >
+              <Sparkles className="h-4 w-4" />
+              {asking ? 'Asking…' : 'Ask AI'}
+            </button>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <input
+              type="text"
+              value={askQuestion}
+              onChange={(e) => setAskQuestion(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleAskAi();
+                }
+              }}
+              placeholder='e.g. "Summarize this note" or "Explain this paragraph"'
+              className="w-full px-3 py-2 bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-slate-700 rounded-lg text-gray-900 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+
+            {askError && (
+              <div className="p-3 bg-danger-50 dark:bg-danger-900/20 border border-danger-200 dark:border-danger-700 rounded-lg">
+                <p className="text-danger-700 dark:text-danger-400 text-sm">{askError}</p>
+              </div>
+            )}
+
+            {askAnswer && (
+              <div className="p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-lg">
+                <p className="text-gray-900 dark:text-slate-100 text-sm whitespace-pre-wrap leading-relaxed">
+                  {askAnswer}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* AI Assistant with note context */}

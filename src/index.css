@@ -17,7 +17,55 @@
 }
 
 .ql-editor {
-  @apply min-h-[200px];
+  @apply min-h-[220px] max-w-3xl mx-auto leading-relaxed text-base sm:text-[15px] md:text-[16px] px-3 sm:px-4 md:px-6 py-3 sm:py-4 break-words whitespace-pre-wrap;
+}
+
+.ql-editor p {
+  @apply mb-3;
+}
+
+.ql-editor h1 {
+  @apply text-2xl sm:text-3xl font-bold mt-4 mb-2;
+}
+
+.ql-editor h2 {
+  @apply text-xl sm:text-2xl font-semibold mt-4 mb-2;
+}
+
+.ql-editor h3 {
+  @apply text-lg sm:text-xl font-semibold mt-3 mb-2;
+}
+
+.ql-editor ul {
+  @apply list-disc pl-6 mb-3;
+}
+
+.ql-editor ol {
+  @apply list-decimal pl-6 mb-3;
+}
+
+.ql-editor li {
+  @apply mb-1;
+}
+
+.ql-editor blockquote {
+  @apply border-l-4 border-primary-500 pl-3 italic my-3 text-slate-200;
+}
+
+.ql-editor pre {
+  @apply bg-slate-900 border border-slate-700 rounded-md p-3 overflow-x-auto text-sm my-3;
+}
+
+.quill-wrapper {
+  @apply border border-gray-300 dark:border-slate-700 rounded-lg overflow-hidden bg-gray-50 dark:bg-slate-900;
+}
+
+.quill-wrapper .ql-toolbar {
+  @apply bg-gray-100 dark:bg-slate-800 border-b border-gray-300 dark:border-slate-700 overflow-x-auto whitespace-nowrap;
+}
+
+.quill-wrapper .ql-container {
+  @apply border-0;
 }
 
 .ql-snow .ql-stroke {

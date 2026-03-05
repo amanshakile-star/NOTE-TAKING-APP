@@ -13,6 +13,8 @@ const getGeminiAPI = () => {
   return new GoogleGenerativeAI(apiKey);
 };
 
+const GEMINI_MODEL = 'gemini-1.5-flash';
+
 export async function analyzeNoteForQuotes(text) {
   console.log('analyzeNoteForQuotes: Starting analysis for text length:', text?.length);
   
@@ -28,7 +30,7 @@ export async function analyzeNoteForQuotes(text) {
       throw new Error('Gemini API key not configured. Please add VITE_GEMINI_API_KEY to your .env file');
     }
     
-    const model = genAI.getGenerativeModel({ model: 'models/gemini-2.5-flash' });
+    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
     
     const prompt = `Analyze the following text and extract 3-5 meaningful, inspirational, or important quotes that would be worth remembering. Return ONLY the quotes, one per line, without numbering or extra formatting:\n\n${text}`;
     
@@ -68,7 +70,7 @@ export async function highlightExamContent(text) {
       throw new Error('Gemini API key not configured. Please add VITE_GEMINI_API_KEY to your .env file');
     }
     
-    const model = genAI.getGenerativeModel({ model: 'models/gemini-2.5-flash' });
+    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
     
     const prompt = `Analyze the following text and identify key exam content, important definitions, concepts, and facts that a student should remember. Return ONLY the important highlights, one per line, without numbering:\n\n${text}`;
     
@@ -108,7 +110,7 @@ export async function askAIAssistant(question, context = null) {
       throw new Error('Gemini API key not configured. Please add VITE_GEMINI_API_KEY to your .env file');
     }
     
-    const model = genAI.getGenerativeModel({ model: 'models/gemini-2.5-flash' });
+    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
     
     let prompt = question;
     

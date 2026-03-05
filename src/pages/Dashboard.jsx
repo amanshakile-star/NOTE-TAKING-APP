@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { FileText, Quote, Sparkles, Clock } from 'lucide-react';
+import { FileText, Quote, Sparkles, Clock, RotateCcw, Trash2 } from 'lucide-react';
 import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../config/firebase';
+import { createNote } from '../services/noteService';
+import { getRecentlyClosedNotes, removeRecentlyClosedNote } from '../utils/recentlyClosed';
 
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
@@ -10,6 +12,7 @@ export default function Dashboard() {
   const [quotes, setQuotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [recentlyClosed, setRecentlyClosed] = useState([]);
 
   // Real-time listener for notes
   useEffect(() => {
@@ -57,6 +60,46 @@ export default function Dashboard() {
       unsubscribe();
     };
   }, [user?.uid, authLoading]);
+
+  // Recently closed notes (from localStorage)
+  useEffect(() => {
+    if (!user?.uid) {
+      setRecentlyClosed([]);
+      return;
+    }
+    setRecentlyClosed(getRecentlyClosedNotes(user.uid).slice(0, 5));
+  }, [user?.uid]);
+
+  const refreshRecentlyClosed = () => {
+    if (!user?.uid) return;
+    setRecentlyClosed(getRecentlyClosedNotes(user.uid).slice(0, 5));
+  };
+
+  const handleRestoreClosed = async (closedNote) => {
+    if (!user?.uid) return;
+
+    try {
+      await createNote(user.uid, {
+        title: closedNote.title,
+        content: closedNote.content,
+        tags: closedNote.tags,
+        reminderDate: closedNote.reminderDate,
+        highlights: closedNote.highlights
+      });
+      removeRecentlyClosedNote(user.uid, closedNote.id);
+      refreshRecentlyClosed();
+    } catch (err) {
+      console.error('Dashboard: Failed to restore note from recently closed', err);
+      alert('Failed to restore note. Please try again.');
+    }
+  };
+
+  const handleDeleteClosedForever = (closedNote) => {
+    if (!user?.uid) return;
+    if (!confirm('Permanently remove this recently closed note? This cannot be undone.')) return;
+    removeRecentlyClosedNote(user.uid, closedNote.id);
+    refreshRecentlyClosed();
+  };
 
   // Real-time listener for quotes
   useEffect(() => {
@@ -204,6 +247,63 @@ export default function Dashboard() {
             <p className="text-gray-900 dark:text-slate-100 font-medium text-sm sm:text-base">My Quotes</p>
           </a>
         </div>
+      </div>
+
+      {/* Recently Closed Notes */}
+      <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-lg border border-gray-200 dark:border-slate-800 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-slate-100 flex items-center gap-2">
+            <Clock className="h-5 w-5 text-primary-500" />
+            Recently Closed
+          </h2>
+          {recentlyClosed.length > 0 && (
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-slate-500">
+              Showing last {recentlyClosed.length} closed notes
+            </p>
+          )}
+        </div>
+
+        {recentlyClosed.length === 0 ? (
+          <p className="text-gray-500 dark:text-slate-500 text-sm">
+            Notes you delete will appear here so you can quickly restore them.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {recentlyClosed.map((note) => (
+              <div
+                key={`${note.id}-${note.deletedAt}`}
+                className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 rounded-lg bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800"
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-gray-900 dark:text-slate-100 truncate">
+                    {note.title || 'Untitled note'}
+                  </p>
+                  {note.deletedAt && (
+                    <p className="text-xs text-gray-500 dark:text-slate-500">
+                      Closed on {new Date(note.deletedAt).toLocaleString()}
+                    </p>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => handleRestoreClosed(note)}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-success-500 hover:bg-success-600 text-white text-xs sm:text-sm font-medium transition"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    Restore
+                  </button>
+                  <button
+                    onClick={() => handleDeleteClosedForever(note)}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-danger-50 dark:bg-danger-900/20 text-danger-700 dark:text-danger-400 border border-danger-200 dark:border-danger-700 hover:bg-danger-100 dark:hover:bg-danger-900/40 text-xs sm:text-sm font-medium transition"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete Forever
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
