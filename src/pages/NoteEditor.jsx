@@ -216,36 +216,26 @@ export default function NoteEditor() {
             theme="snow"
             value={content}
             onChange={setContent}
-            className="bg-gray-50 dark:bg-slate-900 rounded-b-lg"
             modules={{
               toolbar: [
                 [{ header: [1, 2, 3, false] }],
-                ['bold', 'italic', 'underline', 'strike'],
-                [{ list: 'ordered' }, { list: 'bullet' }],
-                [{ align: [] }],
-                [{ size: ['small', false, 'large', 'huge'] }],
                 [{ font: [] }],
+                [{ size: ['small', false, 'large', 'huge'] }],
+                ['bold', 'italic', 'underline', 'strike'],
                 [{ color: [] }, { background: [] }],
-                ['link', 'blockquote', 'code-block'],
+                [{ align: [] }],
+                [{ list: 'ordered' }, { list: 'bullet' }],
+                ['blockquote', 'code-block'],
+                ['link'],
                 ['clean']
               ]
             }}
             formats={[
-              'header',
-              'bold',
-              'italic',
-              'underline',
-              'strike',
-              'blockquote',
-              'code-block',
-              'list',
-              'bullet',
-              'align',
-              'size',
-              'font',
-              'color',
-              'background',
-              'link'
+              'header', 'font', 'size',
+              'bold', 'italic', 'underline', 'strike',
+              'color', 'background',
+              'align', 'list', 'bullet',
+              'blockquote', 'code-block', 'link'
             ]}
           />
         </div>

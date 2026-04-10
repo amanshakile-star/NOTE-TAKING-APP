@@ -13,7 +13,22 @@ const getGeminiAPI = () => {
   return new GoogleGenerativeAI(apiKey);
 };
 
-const GEMINI_MODEL = 'gemini-1.5-flash';
+const GEMINI_MODEL = 'gemini-2.0-flash';
+
+const SYSTEM_PROMPT = `You are a smart AI assistant integrated into a notes and productivity app.
+Your tasks:
+1. Answer questions
+2. Summarize notes
+3. Generate quotes or ideas
+4. Help users stay productive
+5. Give simple explanations for technical topics
+
+Behavior:
+- Be concise but helpful
+- Use simple language
+- When given notes, analyze and extract key ideas
+- Offer suggestions when possible
+- Stay relevant to the user's request`;
 
 export async function analyzeNoteForQuotes(text) {
   console.log('analyzeNoteForQuotes: Starting analysis for text length:', text?.length);
@@ -25,12 +40,8 @@ export async function analyzeNoteForQuotes(text) {
     }
 
     const genAI = getGeminiAPI();
-    if (!genAI) {
-      console.error('analyzeNoteForQuotes: Gemini API not configured');
-      throw new Error('Gemini API key not configured. Please add VITE_GEMINI_API_KEY to your .env file');
-    }
-    
-    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
+    if (!genAI) throw new Error('Gemini API key not configured.');
+    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL, systemInstruction: SYSTEM_PROMPT });
     
     const prompt = `Analyze the following text and extract 3-5 meaningful, inspirational, or important quotes that would be worth remembering. Return ONLY the quotes, one per line, without numbering or extra formatting:\n\n${text}`;
     
@@ -65,12 +76,8 @@ export async function highlightExamContent(text) {
     }
 
     const genAI = getGeminiAPI();
-    if (!genAI) {
-      console.error('highlightExamContent: Gemini API not configured');
-      throw new Error('Gemini API key not configured. Please add VITE_GEMINI_API_KEY to your .env file');
-    }
-    
-    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
+    if (!genAI) throw new Error('Gemini API key not configured.');
+    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL, systemInstruction: SYSTEM_PROMPT });
     
     const prompt = `Analyze the following text and identify key exam content, important definitions, concepts, and facts that a student should remember. Return ONLY the important highlights, one per line, without numbering:\n\n${text}`;
     
@@ -105,12 +112,8 @@ export async function askAIAssistant(question, context = null) {
     }
 
     const genAI = getGeminiAPI();
-    if (!genAI) {
-      console.error('askAIAssistant: Gemini API not configured');
-      throw new Error('Gemini API key not configured. Please add VITE_GEMINI_API_KEY to your .env file');
-    }
-    
-    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
+    if (!genAI) throw new Error('Gemini API key not configured.');
+    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL, systemInstruction: SYSTEM_PROMPT });
     
     let prompt = question;
     
