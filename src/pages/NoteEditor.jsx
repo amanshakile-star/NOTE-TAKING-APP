@@ -3,9 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
-import { createNote, updateNote, getNote } from '../services/noteService';
+import { createNote, updateNote, getNote, saveQuote } from '../services/noteService';
 import { askAIAssistant, analyzeNoteForQuotes, highlightExamContent, textToSpeech, stopSpeech } from '../services/aiService';
-import { Save, Sparkles, Volume2, VolumeX, Calendar, Tag, ArrowLeft } from 'lucide-react';
+import { Save, Sparkles, Volume2, VolumeX, Calendar, Tag, ArrowLeft, Quote } from 'lucide-react';
 import AIAssistant from '../components/AIAssistant';
 
 export default function NoteEditor() {
@@ -17,11 +17,12 @@ export default function NoteEditor() {
   const [tags, setTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
   const [reminderDate, setReminderDate] = useState('');
-  const [aiMode, setAiMode] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [highlights, setHighlights] = useState([]);
   const [saving, setSaving] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
+  const [extractingQuotes, setExtractingQuotes] = useState(false);
+  const [savedQuotesCount, setSavedQuotesCount] = useState(0);
   const [askQuestion, setAskQuestion] = useState('');
   const [askAnswer, setAskAnswer] = useState('');
   const [asking, setAsking] = useState(false);
@@ -100,6 +101,32 @@ export default function NoteEditor() {
       setHighlights([]);
     } finally {
       setAnalyzing(false);
+    }
+  };
+
+  const handleExtractQuotes = async () => {
+    const plainText = content.replace(/<[^>]*>/g, '').trim();
+    if (!plainText) { alert('Please add some content first.'); return; }
+    if (!user?.uid) { alert('Not authenticated.'); return; }
+
+    setExtractingQuotes(true);
+    try {
+      const quotes = await analyzeNoteForQuotes(plainText);
+      if (!quotes || quotes.length === 0) {
+        alert('No meaningful quotes found. Try with more content.');
+        return;
+      }
+      // Save each quote to Firestore
+      await Promise.all(
+        quotes.map(q => saveQuote(user.uid, { text: q, source: title || 'Untitled note' }))
+      );
+      setSavedQuotesCount(quotes.length);
+      alert(`${quotes.length} quote(s) saved to your Quotes page!`);
+    } catch (err) {
+      console.error('Extract quotes error:', err);
+      alert(`Failed to extract quotes: ${err.message}`);
+    } finally {
+      setExtractingQuotes(false);
     }
   };
 
@@ -185,6 +212,16 @@ export default function NoteEditor() {
           >
             <Sparkles className="h-4 w-4 sm:h-5 sm:w-5" />
             <span>{analyzing ? 'Analyzing...' : 'AI Analyze'}</span>
+          </button>
+
+          {/* Extract Quotes - Yellow outline */}
+          <button
+            onClick={handleExtractQuotes}
+            disabled={extractingQuotes}
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-white dark:bg-slate-900 border border-primary-500 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition disabled:opacity-50 text-sm font-medium"
+          >
+            <Quote className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span>{extractingQuotes ? 'Saving...' : 'Extract Quotes'}</span>
           </button>
           
           {/* Save Action - Green */}
